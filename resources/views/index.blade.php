@@ -273,9 +273,13 @@
             </p>
         </div>
         <div class="relative w-full overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10"></div>
-            <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10"></div>
-            <div class="flex animate-scroll hover:pause w-max">
+            <div
+                class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 hidden md:block">
+            </div>
+            <div
+                class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 hidden md:block">
+            </div>
+            <div class="hidden md:flex animate-scroll hover:pause w-max">
                 <div class="flex min-w-max justify-around items-center gap-16 px-8 flex-shrink-0">
                     <img src="{{ asset('images/brandlogo1.png') }}"
                         class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
