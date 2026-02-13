@@ -27,7 +27,7 @@ class CheckoutController extends Controller
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
             'company' => 'nullable|string|max:255',
-            'website' => 'nullable|url|max:255',
+            'website' => 'nullable|string|max:255',
             'plan' => 'required|string',
             'strategy' => 'required|string',
             'distribution' => 'nullable|integer',
