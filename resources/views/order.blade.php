@@ -406,9 +406,9 @@
 
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Website URL</label>
-                        <input type="url" name="website"
+                        <input type="text" name="website"
                             class="w-full bg-brand-black border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-red transition"
-                            placeholder="https://yourwebsite.com">
+                            placeholder="yourwebsite.com">
                     </div>
 
                     <button type="submit"
