@@ -788,9 +788,9 @@
                         <span class="font-bold text-white">3 Days</span>
                     </li>
                 </ul>
-                <a href="{{ url('checkout') }}?plan=access"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                <span
+                    class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                    Now</span>
             </div>
 
             <!-- Growth Package (Popular) -->
@@ -818,9 +818,9 @@
                         <span class="font-bold text-white">3 Days</span>
                     </li>
                 </ul>
-                <a href="{{ url('checkout') }}?plan=growth"
-                    class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-white shadow-lg shadow-red-900/40">Order
-                    Now</a>
+                <span
+                    class="block w-full py-3 bg-brand-red text-center rounded-lg font-bold text-white shadow-lg shadow-red-900/40 opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                    Now</span>
             </div>
 
             <!-- Authority Package -->
@@ -846,9 +846,9 @@
                         <span class="font-bold text-white">4 Days</span>
                     </li>
                 </ul>
-                <a href="{{ url('checkout') }}?plan=authority"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                <span
+                    class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                    Now</span>
             </div>
 
             <!-- Ultimate Package -->
@@ -874,9 +874,9 @@
                         <span class="font-bold text-white">5 Days</span>
                     </li>
                 </ul>
-                <a href="{{ url('checkout') }}?plan=ultimate"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                <span
+                    class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                    Now</span>
             </div>
         </div>
 
@@ -931,18 +931,18 @@
                     </tr>
                     <tr>
                         <td></td>
-                        <td class="p-4"><a href="{{ url('checkout') }}?plan=access"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
-                        <td class="p-4"><a href="{{ url('checkout') }}?plan=growth"
-                                class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-sm shadow-lg shadow-red-900/40">Order
-                                Now</a></td>
-                        <td class="p-4"><a href="{{ url('checkout') }}?plan=authority"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
-                        <td class="p-4"><a href="{{ url('checkout') }}?plan=ultimate"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
+                        <td class="p-4"><span
+                                class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-sm text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                                Now</span></td>
+                        <td class="p-4"><span
+                                class="block w-full py-3 bg-brand-red text-center rounded-lg font-bold text-sm text-white shadow-lg shadow-red-900/40 opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                                Now</span></td>
+                        <td class="p-4"><span
+                                class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-sm text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                                Now</span></td>
+                        <td class="p-4"><span
+                                class="block w-full py-3 bg-gray-800 text-center rounded-lg font-bold text-sm text-white opacity-60 cursor-not-allowed pointer-events-none select-none">Order
+                                Now</span></td>
                     </tr>
                 </tbody>
             </table>
