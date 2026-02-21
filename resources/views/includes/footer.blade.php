@@ -52,7 +52,7 @@
         <div
             class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
             <div class="mb-4 md:mb-0">
-                &copy; 2026 BrandThirty. All rights reserved.
+                &copy; 2026 BrandThirty. All rights reserved. <span class="text-[8px] opacity-20">v1.0.1</span>
             </div>
             <div class="flex space-x-6">
                 <a href="#" class="hover:text-white transition">Privacy Policy</a>
