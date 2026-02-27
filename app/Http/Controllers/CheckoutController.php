@@ -6,11 +6,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\Order;
 
 class CheckoutController extends Controller
 {
-    // Removed hardcoded prices. Using DB 'settings' table.
+    /** Single source of truth for prices – must match order page data-price values. */
+    protected $planPrices = [
+        'access' => 980,
+        'growth' => 2380,
+        'authority' => 3980,
+        'ultimate' => 4980,
+    ];
 
     protected $adminEmail = 'admin@brandthirty.com';
     protected $whatsappNumber = "601111293598";
@@ -33,29 +41,15 @@ class CheckoutController extends Controller
             'distribution' => 'nullable|integer',
         ]);
 
-        // 2. Calculate Costs
-        $selectedPlan = strtolower($validated['plan']);
-        $strategy = strtolower($validated['strategy']);
+        // 2. Calculate Costs (canonical prices – same logic as order page)
+        $selectedPlan = strtolower(trim($validated['plan'] ?? ''));
+        $strategy = strtolower(trim($validated['strategy'] ?? ''));
         $distributionCount = (int) ($validated['distribution'] ?? 0);
-        $validated['distribution'] = $distributionCount; // Ensure key exists for view
+        $validated['distribution'] = $distributionCount;
 
         $grandTotal = 0;
 
-        // Fetch Prices from DB
-        $price = DB::table('settings')->where('key', 'price_' . $selectedPlan)->value('value');
-
-        // STRICT PRICE CHECK: If DB is missing price, log error or throw exception. 
-        // For now, fail safe to standard if missing (should be fixed by DB update).
-        if (!$price) {
-            $price = match ($selectedPlan) {
-                'access' => 980,
-                'growth' => 2380,
-                'authority' => 3980,
-                'ultimate' => 4980,
-                default => 1980
-            };
-        }
-
+        $price = $this->planPrices[$selectedPlan] ?? $this->planPrices['access'];
         $grandTotal += (int) $price;
 
         // Strategy Cost
@@ -67,7 +61,7 @@ class CheckoutController extends Controller
             $grandTotal += 100;
             $addonText = "AI-Assisted Content (+RM 100)";
         } else {
-            $addonText = "Self-Provide Content (Free)";
+            $addonText = "Self-Provide Content (RM 0)";
         }
 
         // Distribution Cost
@@ -107,17 +101,18 @@ class CheckoutController extends Controller
             'email' => 'required|email',
             'phone' => 'required|string',
             'company' => 'nullable|string',
-            'website' => 'nullable|url',
+            'website' => 'nullable|string|max:500',
             'plan' => 'required|string',
             'strategy' => 'required|string',
             'distribution' => 'nullable|integer',
             'total_amount' => 'required|numeric', // Validated but re-calculated below
             'order_id' => 'required|string',
-            'confirm_payment' => 'required'
+            'confirm_payment' => 'required',
+            'receipt' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max, payment proof
         ]);
 
         // 2. Duplicate Check
-        $currentHash = md5(json_encode($request->except(['_token', 'order_id']))); // Exclude token and order_id from hash
+        $currentHash = md5(json_encode($request->except(['_token', 'order_id', 'receipt']))); // Exclude token, order_id, and file from hash
         $isDuplicate = false;
 
         if (Session::get('last_order_hash') === $currentHash) {
@@ -127,23 +122,13 @@ class CheckoutController extends Controller
         if (!$isDuplicate) {
             // 3. Database Insertion
             try {
-                // RE-CALCULATE COSTS SERVER-SIDE (Single Source of Truth)
-                $selectedPlan = strtolower($data['plan']);
-                $strategy = strtolower($data['strategy']);
+                // RE-CALCULATE COSTS SERVER-SIDE (same canonical prices as process())
+                $selectedPlan = strtolower(trim($data['plan'] ?? ''));
+                $strategy = strtolower(trim($data['strategy'] ?? ''));
                 $distributionCount = (int) ($data['distribution'] ?? 0);
                 $grandTotal = 0;
 
-                // 1. Fetch Plan Price (DB)
-                $price = DB::table('settings')->where('key', 'price_' . $selectedPlan)->value('value');
-                if (!$price) {
-                    $price = match ($selectedPlan) {
-                        'access' => 980,
-                        'growth' => 2380,
-                        'authority' => 3980,
-                        'ultimate' => 4980,
-                        default => 1980
-                    };
-                }
+                $price = $this->planPrices[$selectedPlan] ?? $this->planPrices['access'];
                 $grandTotal += (int) $price;
 
                 // 2. Strategy Cost
@@ -156,8 +141,7 @@ class CheckoutController extends Controller
                 // 3. Distribution Cost
                 $grandTotal += ($distributionCount * $this->costPerReach);
 
-                // Check if connection works, else handle gracefully
-                DB::table('orders')->insert([
+                $order = Order::create([
                     'order_id' => $data['order_id'],
                     'customer_name' => $data['name'],
                     'customer_email' => $data['email'],
@@ -167,12 +151,22 @@ class CheckoutController extends Controller
                     'plan' => $data['plan'],
                     'strategy' => $data['strategy'],
                     'distribution_reach' => $data['distribution'] ?? 0,
-                    'total_amount' => $grandTotal, // Use calculated total
+                    'total_amount' => $grandTotal,
                     'status' => 'Pending',
-                    'current_step' => 1, // Start at Step 1
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'current_step' => 1,
                 ]);
+
+                // Store payment proof image if uploaded
+                if ($request->hasFile('receipt')) {
+                    try {
+                        $path = $request->file('receipt')->store('receipts/' . $order->id, 'public');
+                        if ($path) {
+                            $order->update(['receipt_path' => $path]);
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Payment proof upload failed: ' . $e->getMessage());
+                    }
+                }
 
                 // Update data array for emails so they show the correct, calculated amount
                 $data['total_amount'] = $grandTotal;

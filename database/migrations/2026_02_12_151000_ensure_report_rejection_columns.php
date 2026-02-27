@@ -5,19 +5,20 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
+    public $withinTransaction = false;
+
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'rejection_reason')) {
+        if (!Schema::hasColumn('orders', 'rejection_reason')) {
+            Schema::table('orders', function (Blueprint $table) {
                 $table->text('rejection_reason')->nullable();
-            }
-            if (!Schema::hasColumn('orders', 'report_file')) {
+            });
+        }
+        if (!Schema::hasColumn('orders', 'report_file')) {
+            Schema::table('orders', function (Blueprint $table) {
                 $table->string('report_file')->nullable();
-            }
-        });
+            });
+        }
     }
 
     /**

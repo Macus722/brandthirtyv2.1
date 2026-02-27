@@ -139,14 +139,47 @@
                         </div>
                         <div class="accordion-content bg-brand-black/20">
                             <div class="p-6 text-center">
-                                <div class="bg-white p-2 rounded-lg inline-block w-40 h-40 mb-4">
-                                    <img src="{{ asset('images/duitnow_qr.jpg') }}" alt="DuitNow QR"
-                                        class="w-full h-full object-contain">
+                                <div class="bg-white p-3 rounded-xl inline-block mb-4 shadow-lg">
+                                    {{-- Real QR image if it exists, otherwise inline SVG placeholder --}}
+                                    @if(file_exists(public_path('images/duitnow_qr.jpg')))
+                                        <img src="{{ asset('images/duitnow_qr.jpg') }}" alt="DuitNow QR Code" class="w-40 h-40 object-contain">
+                                    @else
+                                        <svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                                            <rect width="160" height="160" fill="#fff"/>
+                                            {{-- Simulated QR pattern --}}
+                                            <rect x="10" y="10" width="40" height="40" rx="2" fill="#111"/>
+                                            <rect x="16" y="16" width="28" height="28" rx="1" fill="#fff"/>
+                                            <rect x="22" y="22" width="16" height="16" fill="#111"/>
+                                            <rect x="110" y="10" width="40" height="40" rx="2" fill="#111"/>
+                                            <rect x="116" y="16" width="28" height="28" rx="1" fill="#fff"/>
+                                            <rect x="122" y="22" width="16" height="16" fill="#111"/>
+                                            <rect x="10" y="110" width="40" height="40" rx="2" fill="#111"/>
+                                            <rect x="16" y="116" width="28" height="28" rx="1" fill="#fff"/>
+                                            <rect x="22" y="122" width="16" height="16" fill="#111"/>
+                                            {{-- Center data dots --}}
+                                            <g fill="#111">
+                                                <rect x="60" y="10" width="8" height="8"/><rect x="76" y="10" width="8" height="8"/><rect x="92" y="10" width="8" height="8"/>
+                                                <rect x="60" y="26" width="8" height="8"/><rect x="76" y="26" width="8" height="8"/>
+                                                <rect x="60" y="42" width="8" height="8"/><rect x="92" y="42" width="8" height="8"/>
+                                                <rect x="10" y="60" width="8" height="8"/><rect x="26" y="60" width="8" height="8"/><rect x="42" y="60" width="8" height="8"/><rect x="60" y="60" width="8" height="8"/><rect x="76" y="60" width="8" height="8"/><rect x="92" y="60" width="8" height="8"/><rect x="110" y="60" width="8" height="8"/><rect x="126" y="60" width="8" height="8"/><rect x="142" y="60" width="8" height="8"/>
+                                                <rect x="10" y="76" width="8" height="8"/><rect x="42" y="76" width="8" height="8"/><rect x="76" y="76" width="8" height="8"/><rect x="110" y="76" width="8" height="8"/><rect x="142" y="76" width="8" height="8"/>
+                                                <rect x="10" y="92" width="8" height="8"/><rect x="26" y="92" width="8" height="8"/><rect x="42" y="92" width="8" height="8"/><rect x="60" y="92" width="8" height="8"/><rect x="76" y="92" width="8" height="8"/><rect x="92" y="92" width="8" height="8"/><rect x="110" y="92" width="8" height="8"/><rect x="126" y="92" width="8" height="8"/><rect x="142" y="92" width="8" height="8"/>
+                                                <rect x="60" y="110" width="8" height="8"/><rect x="92" y="110" width="8" height="8"/><rect x="110" y="110" width="8" height="8"/><rect x="142" y="110" width="8" height="8"/>
+                                                <rect x="60" y="126" width="8" height="8"/><rect x="76" y="126" width="8" height="8"/><rect x="126" y="126" width="8" height="8"/>
+                                                <rect x="60" y="142" width="8" height="8"/><rect x="92" y="142" width="8" height="8"/><rect x="110" y="142" width="8" height="8"/><rect x="142" y="142" width="8" height="8"/>
+                                            </g>
+                                        </svg>
+                                    @endif
                                 </div>
-                                <div class="bg-gray-800 rounded px-3 py-1 text-xs font-mono inline-block text-gray-300">
+                                <div class="flex items-center justify-center gap-2 mb-3">
+                                    <span class="text-xs font-bold text-purple-400 uppercase tracking-wide">DuitNow QR</span>
+                                    <span class="text-gray-600">|</span>
+                                    <span class="text-xs text-gray-500">Touch 'n Go / Banking Apps</span>
+                                </div>
+                                <div class="bg-gray-800/80 rounded-lg px-4 py-2 text-xs font-mono inline-block text-gray-300 border border-white/5">
                                     REF: {{ $orderId }}
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2">Scan with any Banking App or E-Wallet</p>
+                                <p class="text-[10px] text-gray-500 mt-3">Scan with any Banking App or E-Wallet. Include Ref ID as payment reference.</p>
                             </div>
                         </div>
                     </div>
@@ -222,7 +255,7 @@
 
                     <!-- CONFIRMATION FORM (Instead of Direct WA Link) -->
                     <div class="pt-6">
-                        <form action="{{ url('checkout/confirm') }}" method="POST">
+                        <form action="{{ url('checkout/confirm') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <!-- Hidden Inputs to Pass Data to Process State -->
                             <input type="hidden" name="name" value="{{ $orderData['name'] }}">
@@ -235,6 +268,19 @@
                             <input type="hidden" name="distribution" value="{{ $orderData['distribution'] }}">
                             <input type="hidden" name="total_amount" value="{{ $grandTotal }}">
                             <input type="hidden" name="order_id" value="{{ $orderId }}">
+
+                            <!-- Payment proof upload -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-bold text-gray-300 mb-2">
+                                    <i class="fas fa-camera text-brand-red mr-1"></i> Upload payment proof (optional)
+                                </label>
+                                <p class="text-xs text-gray-500 mb-2">Screenshot or photo of your payment receipt (JPEG, PNG, max 5MB). Admin will verify before approving.</p>
+                                <input type="file" name="receipt" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp"
+                                    class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:font-bold file:cursor-pointer hover:file:bg-white/20">
+                                @error('receipt')
+                                    <p class="text-red-400 text-xs mt-1">{{ $message }}</p>
+                                @enderror
+                            </div>
 
                             <button type="submit" name="confirm_payment" value="1"
                                 class="w-full py-4 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-center transition-all shadow-lg hover:shadow-green-900/40 flex items-center justify-center gap-3">

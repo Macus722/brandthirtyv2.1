@@ -280,61 +280,39 @@
                 class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 hidden md:block">
             </div>
             <div class="hidden md:flex animate-scroll hover:pause w-max">
+                @php
+                    $asSeenLogos = [
+                        ['file' => 'brandlogo1.png', 'alt' => 'News Site Logo'],
+                        ['file' => 'brandlogo2.png', 'alt' => 'Media Outlet Logo'],
+                        ['file' => 'brandlogo3.png', 'alt' => 'Authority Site Logo'],
+                        ['file' => 'brandlogo4.png', 'alt' => 'Press Release Logo'],
+                        ['file' => 'brandlogo6.png', 'alt' => 'Global News Logo'],
+                        ['file' => 'brandlogo8.png', 'alt' => 'Business News Logo'],
+                        ['file' => 'brandlogo9.png', 'alt' => 'Media Logo'],
+                    ];
+                    $fallbackUrl = 'https://placehold.co/200x80/e5e7eb/6b7280?text=Logo';
+                @endphp
                 <div class="flex min-w-max justify-around items-center gap-16 px-8 flex-shrink-0">
-                    <img src="{{ asset('images/brandlogo1.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="News Site Logo">
-                    <img src="{{ asset('images/brandlogo2.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Media Outlet Logo">
-                    <img src="{{ asset('images/brandlogo3.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Authority Site Logo">
-                    <img src="{{ asset('images/brandlogo4.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Press Release Logo">
-                    <img src="{{ asset('images/brandlogo6.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Global News Logo">
-                    <img src="{{ asset('images/brandlogo8.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Business News Logo">
-                    <img src="{{ asset('images/brandlogo9.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Media Logo">
+                    @foreach($asSeenLogos as $logo)
+                        <img src="{{ asset('Images/' . $logo['file']) }}"
+                            class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
+                            alt="{{ $logo['alt'] }}" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
+                    @endforeach
                 </div>
                 <div class="flex min-w-max justify-around items-center gap-16 px-8 flex-shrink-0">
-                    <img src="{{ asset('images/brandlogo1.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="News Site Logo">
-                    <img src="{{ asset('images/brandlogo2.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Media Outlet Logo">
-                    <img src="{{ asset('images/brandlogo3.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Authority Site Logo">
-                    <img src="{{ asset('images/brandlogo4.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Press Release Logo">
-                    <img src="{{ asset('images/brandlogo6.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Global News Logo">
-                    <img src="{{ asset('images/brandlogo8.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Business News Logo">
-                    <img src="{{ asset('images/brandlogo9.png') }}"
-                        class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
-                        alt="Media Logo">
+                    @foreach($asSeenLogos as $logo)
+                        <img src="{{ asset('Images/' . $logo['file']) }}"
+                            class="h-56 w-auto flex-shrink-0 object-contain transition duration-300 hover:scale-110"
+                            alt="{{ $logo['alt'] }}" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
+                    @endforeach
                 </div>
             </div>
             <!-- Mobile Grid -->
             <div class="grid grid-cols-2 gap-8 md:hidden px-4 justify-items-center items-center">
-                <img src="{{ asset('images/brandlogo1.png') }}" class="h-24 w-auto object-contain" alt="Logo">
-                <img src="{{ asset('images/brandlogo2.png') }}" class="h-24 w-auto object-contain" alt="Logo">
-                <img src="{{ asset('images/brandlogo3.png') }}" class="h-24 w-auto object-contain" alt="Logo">
-                <img src="{{ asset('images/brandlogo4.png') }}" class="h-24 w-auto object-contain" alt="Logo">
-                <img src="{{ asset('images/brandlogo6.png') }}" class="h-24 w-auto object-contain" alt="Logo">
-                <img src="{{ asset('images/brandlogo8.png') }}" class="h-24 w-auto object-contain" alt="Logo">
+                @foreach(array_slice($asSeenLogos, 0, 6) as $logo)
+                    <img src="{{ asset('Images/' . $logo['file']) }}" class="h-24 w-auto object-contain"
+                        alt="{{ $logo['alt'] }}" onerror="this.onerror=null;this.src='{{ $fallbackUrl }}';">
+                @endforeach
             </div>
         </div>
 

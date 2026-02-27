@@ -173,7 +173,7 @@
                         <span style="color: #999; font-size: 10px;">{{ $order->company_name }}</span>
                     </td>
                     <td>{{ $order->plan }}</td>
-                    <td class="text-right">{{ number_format((float) $order->total_amount, 2) }}</td>
+                    <td class="text-right">RM {{ number_format((float) $order->total_amount, 2) }}</td>
                     <td>
                         @if(in_array($order->status, ['Paid', 'Completed']))
                             <span class="badge badge-green">PAID</span>

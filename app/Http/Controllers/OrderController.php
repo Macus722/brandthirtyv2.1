@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OrderSuccessful;
 use App\Mail\OrderRejected;
+use App\Mail\OrderDelivered;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
@@ -29,29 +30,41 @@ class OrderController extends Controller
         // Auth handled by Middleware
         $user = auth()->user();
 
-        $query = Order::query()->with('brand');
+        $baseQuery = Order::query();
 
         // RBAC: Staff Filter
         if ($user->role == 'staff') {
-            $query->where('staff_id', $user->id);
+            $baseQuery->where('staff_id', $user->id);
         }
 
         // Filter Logic
+        // Two distinct "pending" scopes: Customer Pending (Step 2) vs Admin Review (Step 7)
         $defaultTab = ($user->role == 'staff') ? 'Processing' : 'Pending';
         $status = $request->input('status', $defaultTab);
+        if ($status === 'To Review') {
+            $status = 'Pending Approval';
+        }
 
-        // Redirect Staff attempting to access Pending
         if ($user->role == 'staff' && $status == 'Pending') {
             return redirect('admin/orders?status=Processing');
         }
 
+        // Single source of truth (shared with Dashboard)
+        $tabCounts = Order::getTabCountsForUser($user);
+
+        $query = (clone $baseQuery)->with('brand');
+
         if ($status != 'All') {
             if ($status == 'Completed') {
-                $query->whereIn('status', ['Completed', 'Paid']);
+                $query->whereIn('status', Order::STATUSES_COMPLETED);
             } elseif ($status == 'Processing') {
-                $query->whereIn('status', ['Processing', 'In Progress', 'Review', 'Assigned']);
+                $query->whereIn('status', Order::STATUSES_IN_PROGRESS);
+            } elseif ($status == 'Pending Approval') {
+                $query->where('status', 'Review');
             } elseif ($status == 'Cancelled' || $status == 'Rejected') {
                 $query->where('status', 'Rejected');
+            } elseif ($status == 'Pending') {
+                $query->where('status', 'Pending');
             } else {
                 $query->where('status', $status);
             }
@@ -65,14 +78,14 @@ class OrderController extends Controller
             });
         }
         $orders = $query->orderBy('created_at', 'desc')->paginate(20);
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'tabCounts', 'status'));
     }
 
     public function show($id)
     {
         // Auth handled by Middleware
 
-        $order = Order::findOrFail($id);
+        $order = Order::with(['brand', 'staff'])->findOrFail($id);
 
         // Auto-fix Sync Issue: If Completed/Paid, ensure Step 8
         if (($order->status == 'Completed' || $order->status == 'Paid') && $order->current_step < 8) {
@@ -184,29 +197,19 @@ class OrderController extends Controller
     // Unified "Approve Order" Action (Replacing Accept/Verify Manual Steps)
     public function approve($id)
     {
-        // Auth handled by Middleware
-        // Admin Only
         if (auth()->user()->role !== 'admin') {
             return redirect()->back()->with('error', 'Unauthorized.');
         }
 
         $order = Order::findOrFail($id);
 
-        // Requirement: Staff must be assigned BEFORE approval
         if (!$order->staff_id) {
             return redirect()->back()->with('error', 'Please assign a staff member before approving the order.');
         }
 
-        // 1. Force Verification Logic
         $order->is_payment_verified = true;
         $order->is_content_verified = true;
-
-        // 2. Sync Stepper & Status
-        // Force Step 3 (Payment Verified) as requested.
-        // Step 4 (Content Pending) starts effectively immediately after since verified.
-        // User requested: "Force set current_step = 3".
         $order->current_step = 3;
-
         $order->status = 'Assigned';
         $order->approved_at = now();
         $order->save();
@@ -218,19 +221,39 @@ class OrderController extends Controller
             'details' => 'Admin approved order. Payment & Content Verified. Locked to Step 3.'
         ]);
 
-        return redirect()->back()->with('success', 'Order Approved and sent to Staff dashboard.');
+        // Generate Invoice PDF and send "Order Successful" email (log driver in local = no connection needed)
+        $order->load('brand');
+        try {
+            $pdf = Pdf::loadView('admin.invoice', ['order' => $order]);
+            Mail::to($order->customer_email)->send(new OrderSuccessful($order, $pdf));
+
+            OrderLog::create([
+                'order_id' => $id,
+                'user' => 'System',
+                'action' => 'Invoice & Email Sent',
+                'details' => 'Auto-generated invoice PDF and sent OrderSuccessful email to ' . $order->customer_email
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error("Failed to send approval email for order #{$order->order_id}: " . $e->getMessage());
+            return redirect()->back()->with('success', 'Order approved. Email could not be sent (check storage/logs/laravel.log).');
+        }
+
+        return redirect()->back()->with('success', 'Order approved. Invoice PDF emailed to ' . $order->customer_email . '.');
     }
 
     public function rejectContent(Request $request, $id)
     {
-        // Auth handled by Middleware
-        $order = Order::findOrFail($id);
+        $request->validate(['reason' => 'required|string|max:2000'], [
+            'reason.required' => 'Please provide a rejection reason (for the order and customer email).',
+        ]);
 
+        $order = Order::findOrFail($id);
         $order->status = 'Rejected';
         $order->rejection_reason = $request->input('reason');
         $order->save();
 
-        // Send Rejection Email
+        $order->load('brand');
+
         try {
             Mail::to($order->customer_email)->send(new OrderRejected($order));
         } catch (\Exception $e) {
@@ -239,43 +262,124 @@ class OrderController extends Controller
 
         OrderLog::create([
             'order_id' => $id,
-            'user' => 'Admin',
+            'user' => auth()->user()->name,
             'action' => 'Order Rejected',
             'details' => 'Reason: ' . $request->input('reason')
         ]);
 
-        return redirect()->back()->with('success', 'Order Rejected and Notification Sent.');
+        return redirect()->back()->with('success', 'Order rejected. Reason saved and customer notified by email.');
     }
 
     public function complete(Request $request, $id)
     {
-        // Auth handled by Middleware
+        // Staff uploads report -> move to admin review (Step 7), not completed directly.
         $request->validate([
-            'report_file' => 'required|file|mimes:pdf,doc,docx,zip|max:10240'
+            'report_file' => [
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx,zip',
+                'max:10240', // 10MB
+            ],
+        ], [
+            'report_file.file' => 'The uploaded file is invalid.',
+            'report_file.mimes' => 'The report must be a PDF, DOC, DOCX or ZIP file.',
+            'report_file.max' => 'The report file must not exceed 10MB.',
         ]);
 
         $order = Order::findOrFail($id);
+
+        // Only assigned staff (or admin) can submit final work for review.
+        if (auth()->user()->role == 'staff' && $order->staff_id != auth()->id()) {
+            return redirect()->back()->with('error', 'Unauthorized.');
+        }
 
         if ($request->hasFile('report_file')) {
             $path = $request->file('report_file')->store('reports', 'public');
             $order->report_file = $path;
         }
 
-        // Step 7: Report Uploaded (implicitly done by uploading)
-        // Step 8: Completed
+        $order->current_step = Order::STEP_REPORT_UPLOADED; // Step 7
+        $order->status = 'Review'; // Pending admin approval
+        $order->completed_at = null;
+        $order->save();
+
+        OrderLog::create([
+            'order_id' => $id,
+            'user' => auth()->user()->name,
+            'action' => 'Report Submitted',
+            'details' => 'Staff uploaded final report and submitted for admin approval (Step 7).'
+        ]);
+
+        return redirect()->back()->with('success', 'Report uploaded. Order is now pending admin approval.');
+    }
+
+    public function adminApprove($id)
+    {
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->back()->with('error', 'Only admins can finalize orders.');
+        }
+
+        $order = Order::findOrFail($id);
+        if (!$this->isPendingAdminApproval($order)) {
+            return redirect()->back()->with('error', 'Only orders in Pending Approval (Step 7) can be finalized.');
+        }
+
+        $this->finalizeAsCompleted($order);
+
+        return redirect()->back()->with('success', 'Order approved and marked as Completed.');
+    }
+
+    // Deprecated GET endpoint compatibility: /admin/completed/{id}
+    public function adminApproveLegacy($id)
+    {
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->back()->with('error', 'Only admins can finalize orders.');
+        }
+
+        $order = Order::findOrFail($id);
+        if (!$this->isPendingAdminApproval($order)) {
+            return redirect()->back()->with('error', 'Deprecated endpoint blocked: order must be at Pending Approval (Step 7).');
+        }
+
+        $this->finalizeAsCompleted($order);
+
+        return redirect()->back()->with('success', 'Order approved and finished (via deprecated endpoint).');
+    }
+
+    private function isPendingAdminApproval(Order $order): bool
+    {
+        return $order->status === 'Review' || (int) $order->current_step === (int) Order::STEP_REPORT_UPLOADED;
+    }
+
+    private function finalizeAsCompleted(Order $order): void
+    {
         $order->current_step = Order::STEP_COMPLETED;
         $order->status = 'Completed';
         $order->completed_at = now();
         $order->save();
 
         OrderLog::create([
-            'order_id' => $id,
-            'user' => auth()->user() ? auth()->user()->name : 'Admin',
-            'action' => 'Order Completed',
-            'details' => 'Final Report Uploaded & Order Completed (Step 8).'
+            'order_id' => $order->id,
+            'user' => auth()->user()->name,
+            'action' => 'Admin Approved & Finished',
+            'details' => 'Admin approved submitted work and finalized order (Step 8).'
         ]);
 
-        return redirect()->back()->with('success', 'Order Completed and Report Uploaded.');
+        // Send "Order Delivered" email to customer with report_file from storage attached
+        $order->load('brand');
+        try {
+            Mail::to($order->customer_email)->send(new OrderDelivered($order));
+
+            OrderLog::create([
+                'order_id' => $order->id,
+                'user' => 'System',
+                'action' => 'Delivery Email Sent',
+                'details' => 'Sent OrderDelivered email to ' . $order->customer_email
+                    . ($order->report_file ? ' (report attached)' : ' (no report file)')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Failed to send delivery email for order #{$order->order_id}: " . $e->getMessage());
+        }
     }
 
     public function submitForReview($id)
@@ -307,19 +411,13 @@ class OrderController extends Controller
         }
 
         $order = Order::findOrFail($id);
-        $order->current_step = 8;
-        $order->status = 'Completed';
-        $order->completed_at = now();
-        $order->save();
+        if (!$this->isPendingAdminApproval($order)) {
+            return redirect()->back()->with('error', 'Quick Complete disabled: order must be at Pending Approval (Step 7).');
+        }
 
-        OrderLog::create([
-            'order_id' => $id,
-            'user' => 'Admin',
-            'action' => 'Quick Complete',
-            'details' => 'Order marked as Completed via Dashboard Quick Action.'
-        ]);
+        $this->finalizeAsCompleted($order);
 
-        return redirect()->back()->with('success', 'Order successfully marked as Completed.');
+        return redirect()->back()->with('success', 'Order approved and marked as Completed.');
     }
 
     // Staff: Start Work

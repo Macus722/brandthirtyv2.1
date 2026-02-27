@@ -209,7 +209,7 @@
                                 <div class="text-4xl mb-4 grayscale group-hover:grayscale-0 transition">📄</div>
                                 <div class="text-lg font-bold text-white mb-1">Access</div>
                                 <div class="text-sm text-gray-500 mb-4">1 Guaranteed Outlet</div>
-                                <div class="text-xl font-bold text-white">$980</div>
+                                <div class="text-xl font-bold text-white">RM 980</div>
                             </div>
 
                             <!-- Growth Plan -->
@@ -221,7 +221,7 @@
                                 <div class="text-4xl mb-4">🚀</div>
                                 <div class="text-lg font-bold text-white mb-1">Growth</div>
                                 <div class="text-sm text-gray-400 mb-4">5 Guaranteed Outlets</div>
-                                <div class="text-xl font-bold text-brand-red">$2380</div>
+                                <div class="text-xl font-bold text-brand-red">RM 2,380</div>
                             </div>
 
                             <!-- Authority Plan -->
@@ -230,7 +230,7 @@
                                 <div class="text-4xl mb-4 grayscale group-hover:grayscale-0 transition">👑</div>
                                 <div class="text-lg font-bold text-white mb-1">Authority</div>
                                 <div class="text-sm text-gray-500 mb-4">10 Guaranteed Outlets</div>
-                                <div class="text-xl font-bold text-white">$3980</div>
+                                <div class="text-xl font-bold text-white">RM 3,980</div>
                             </div>
 
                             <!-- Ultimate Plan -->
@@ -239,7 +239,7 @@
                                 <div class="text-4xl mb-4 grayscale group-hover:grayscale-0 transition">💎</div>
                                 <div class="text-lg font-bold text-white mb-1">Ultimate</div>
                                 <div class="text-sm text-gray-500 mb-4">20 Guaranteed Outlets</div>
-                                <div class="text-xl font-bold text-white">$4980</div>
+                                <div class="text-xl font-bold text-white">RM 4,980</div>
                             </div>
                         </div>
                     </div>
@@ -259,7 +259,7 @@
                                 <div class="font-bold text-white mb-2 flex items-center gap-2">📤 Self-Provide</div>
                                 <p class="text-sm text-gray-500 mb-6 flex-1">Upload your own content. Basic review
                                     included.</p>
-                                <div class="font-bold text-white mt-auto">Free</div>
+                                <div class="font-bold text-white mt-auto">RM 0</div>
                             </div>
 
                             <!-- AI-Assisted -->
@@ -368,9 +368,10 @@
 
                 <form action="{{ url('checkout/process') }}" method="POST" class="space-y-4">
                     @csrf
-                    <!-- Hidden Inputs for Logic -->
+                    <!-- Hidden Inputs for Logic (must match backend CheckoutController prices) -->
                     <input type="hidden" name="plan" id="input-plan" value="growth">
                     <input type="hidden" name="strategy" id="input-strategy" value="pro">
+                    <input type="hidden" name="distribution" id="input-distribution" value="0">
 
 
                     <div class="grid grid-cols-2 gap-4">

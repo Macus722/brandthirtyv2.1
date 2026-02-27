@@ -11,7 +11,7 @@
     <p>Unfortunately, we cannot proceed with your order <strong>#{{ $order->order_id }}</strong> at this time.</p>
     <p><strong>Reason:</strong></p>
     <blockquote style="background: #f9f9f9; border-left: 5px solid #ccc; margin: 1.5em 10px; padding: 0.5em 10px;">
-        {{ $order->rejection_reason }}
+        {{ $order->rejection_reason ?? 'No reason provided.' }}
     </blockquote>
     <p>Please address the issue mentioned above or contact our support team for assistance.</p>
     <p>Best Regards,<br>{{ $order->brand->name ?? 'BrandThirty' }} Team</p>

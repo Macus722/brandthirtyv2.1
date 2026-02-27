@@ -2,111 +2,155 @@
 
 @section('content')
     <div class="max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Order Management</h1>
-            <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white tracking-tight">Order Management</h1>
+                <p class="text-slate-500 text-sm mt-1">View and manage all customer orders.</p>
+            </div>
+            @php $currentStatus = $status ?? request('status', auth()->user()->role == 'staff' ? 'Processing' : 'Pending'); @endphp
+            <div class="flex flex-wrap gap-2">
                 @if(auth()->user()->role != 'staff')
-                <a href="{{ url('admin/orders?status=Pending') }}"
-                    class="px-4 py-2 rounded-lg bg-brand-dark border border-white/10 hover:border-brand-red transition text-sm {{ request('status') == 'Pending' || !request('status') ? 'text-brand-red border-brand-red' : 'text-gray-400' }}">Pending</a>
+                    <a href="{{ url('admin/orders?status=Pending') }}"
+                        class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                        {{ $currentStatus == 'Pending' ? 'bg-brand-red text-white border-brand-red shadow-lg shadow-red-900/20' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                        Pending
+                        <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['pending'] ?? 0 }}</span>
+                    </a>
                 @endif
+                <a href="{{ url('admin/orders?status=Pending Approval') }}"
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                    {{ $currentStatus == 'Pending Approval' ? 'bg-amber-600 text-white border-amber-600 shadow-lg shadow-amber-900/20' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                    Pending Approval
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['pending_approval'] ?? 0 }}</span>
+                </a>
                 <a href="{{ url('admin/orders?status=Processing') }}"
-                    class="px-4 py-2 rounded-lg bg-brand-dark border border-white/10 hover:border-brand-red transition text-sm {{ request('status') == 'Processing' ? 'text-brand-red border-brand-red' : 'text-gray-400' }}">In Progress</a>
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                    {{ $currentStatus == 'Processing' ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-900/20' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                    In Progress
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['processing'] ?? 0 }}</span>
+                </a>
                 <a href="{{ url('admin/orders?status=Completed') }}"
-                    class="px-4 py-2 rounded-lg bg-brand-dark border border-white/10 hover:border-brand-red transition text-sm {{ request('status') == 'Completed' ? 'text-brand-red border-brand-red' : 'text-gray-400' }}">Completed</a>
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                    {{ $currentStatus == 'Completed' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-900/20' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                    Completed
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['completed'] ?? 0 }}</span>
+                </a>
+                <a href="{{ url('admin/orders?status=Cancelled') }}"
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                    {{ $currentStatus == 'Cancelled' ? 'bg-slate-600 text-white border-slate-600 shadow-lg' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                    Cancelled
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['cancelled'] ?? 0 }}</span>
+                </a>
                 <a href="{{ url('admin/orders?status=All') }}"
-                    class="px-4 py-2 rounded-lg bg-brand-dark border border-white/10 hover:border-brand-red transition text-sm {{ request('status') == 'All' ? 'text-brand-red border-brand-red' : 'text-gray-400' }}">All</a>
+                    class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border
+                    {{ $currentStatus == 'All' ? 'bg-slate-600 text-white border-slate-600 shadow-lg' : 'bg-surface-card backdrop-blur border-border-subtle text-slate-400 hover:text-white hover:border-slate-500' }}">
+                    All
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-white/10 text-[10px]">{{ $tabCounts['all'] ?? 0 }}</span>
+                </a>
             </div>
         </div>
 
         <!-- Search Bar -->
-        <div class="mb-6 bg-brand-dark p-4 rounded-xl border border-white/10">
+        <div class="mb-8 exec-card p-5">
             <form action="" method="GET" class="flex gap-4">
-                <input type="hidden" name="status" value="{{ request('status') }}">
+                <input type="hidden" name="status" value="{{ $currentStatus ?? request('status') }}">
                 <input type="text" name="search" value="{{ request('search') }}"
                     placeholder="Search by Order ID or Customer Name..."
-                    class="flex-1 bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-brand-red focus:outline-none">
+                    class="flex-1 bg-slate-800/50 border border-border-subtle rounded-xl px-5 py-3 text-white placeholder-slate-500 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500/30 transition text-sm">
                 <button type="submit"
-                    class="bg-brand-red hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg transition">
+                    class="bg-brand-red hover:bg-brand-red-hover text-white font-semibold py-3 px-7 rounded-xl transition-all duration-200 shadow-lg shadow-red-900/20 text-sm">
                     Search
                 </button>
             </form>
         </div>
 
         <!-- Orders Table -->
-        <div class="bg-brand-dark border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-            <table class="w-full text-left border-collapse">
+        <div class="exec-card overflow-hidden">
+            <table class="w-full text-left">
                 <thead>
-                    <tr class="bg-black/20 text-gray-500 text-xs uppercase border-b border-white/5">
-                        <th class="p-6 font-bold">Order ID</th>
-                        <th class="p-6 font-bold">Customer</th>
-                        <th class="p-6 font-bold">Plan / Strategy</th>
-                        @if(request('status') == 'Pending' || !request('status'))
-                            <th class="p-6 font-bold">Receipt</th>
+                    <tr class="border-b border-border-subtle bg-slate-800/30">
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Order ID</th>
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Plan / Strategy</th>
+                        @if($currentStatus == 'Pending')
+                            <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Receipt</th>
                         @endif
-                        <th class="p-6 font-bold">Status</th>
-                        <th class="p-6 font-bold">Time Verified</th>
-                        <th class="p-6 font-bold text-right py-4">Action</th>
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Time</th>
+                        <th class="px-7 py-5 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Action</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm divide-y divide-white/5">
+                <tbody class="text-sm">
                     @forelse($orders as $order)
-                        <tr class="hover:bg-white/5 transition group">
-                            <td class="p-6 font-mono text-gray-300">#{{ $order->order_id }}</td>
-                            <td class="p-6">
-                                <div class="font-bold text-white">{{ $order->customer_name }}</div>
-                                <div class="text-xs text-gray-500">{{ $order->customer_email }}</div>
+                        <tr class="border-b border-border-subtle hover:bg-white/[0.02] transition-colors duration-150 group">
+                            <td class="px-7 py-5 text-slate-300 font-medium">#{{ $order->order_id }}</td>
+                            <td class="px-7 py-5">
+                                <div class="font-medium text-white">{{ $order->customer_name }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">{{ $order->customer_email }}</div>
                             </td>
-                            <td class="p-6">
-                                <div class="text-brand-red font-bold">{{ $order->plan }}</div>
-                                <div class="text-xs text-gray-400">{{ $order->strategy ?? 'N/A' }}</div>
+                            <td class="px-7 py-5">
+                                <div class="font-semibold text-white">{{ $order->plan }}</div>
+                                <div class="text-xs text-slate-500 mt-0.5">{{ $order->strategy ?? 'N/A' }}</div>
                             </td>
-                            
-                            @if(request('status') == 'Pending' || !request('status'))
-                                <td class="p-6">
-                                    <!-- Placeholder for Receipt Thumbnail -->
-                                    @if(isset($order->receipt_path) || $order->is_payment_verified)
-                                        <div class="w-10 h-10 bg-gray-700 rounded flex items-center justify-center text-xs text-gray-400 border border-white/10">
-                                            <i class="fas fa-file-invoice-dollar"></i>
+
+                            @if($currentStatus == 'Pending')
+                                <td class="px-7 py-5">
+                                    @if($order->receipt_path && \Storage::disk('public')->exists($order->receipt_path))
+                                        <div class="w-9 h-9 bg-emerald-500/15 rounded-lg flex items-center justify-center text-emerald-400">
+                                            <i class="fas fa-file-invoice-dollar text-sm"></i>
+                                        </div>
+                                    @elseif($order->receipt_path)
+                                        <div class="w-9 h-9 bg-amber-500/15 rounded-lg flex items-center justify-center text-amber-400">
+                                            <i class="fas fa-exclamation-triangle text-sm"></i>
                                         </div>
                                     @else
-                                         <span class="text-xs text-gray-600">No Receipt</span>
+                                         <span class="text-xs text-slate-600">No Receipt</span>
                                     @endif
                                 </td>
                             @endif
 
-                            <td class="p-6">
+                            <td class="px-7 py-5">
                                 @if($order->status == 'Completed' || $order->status == 'Paid')
-                                    <span class="bg-green-500/10 text-green-500 px-3 py-1 rounded-full text-xs font-bold border border-green-500/20">Completed</span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400">Completed</span>
                                 @elseif($order->current_step == 7 || $order->status == 'Review')
-                                    <span class="bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/20"><i class="fas fa-clock mr-1"></i> Waiting for Approval</span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400"><i class="fas fa-clipboard-check mr-1 text-[9px]"></i> Pending Approval</span>
                                 @elseif($order->status == 'Processing' || $order->status == 'Approved' || $order->status == 'In Progress' || $order->status == 'Assigned')
-                                    <span class="bg-blue-500/10 text-blue-500 px-3 py-1 rounded-full text-xs font-bold border border-blue-500/20">In Progress</span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/15 text-blue-400">In Progress</span>
                                 @elseif($order->status == 'Rejected')
-                                    <span class="bg-red-500/10 text-red-500 px-3 py-1 rounded-full text-xs font-bold border border-red-500/20">Rejected</span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-500/15 text-red-400">Rejected</span>
                                 @else
-                                    <span class="bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/20">Pending</span>
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-400"><i class="fas fa-hourglass-half mr-1 text-[9px]"></i> Pending</span>
                                 @endif
                             </td>
-                            <td class="p-6 text-gray-500 text-xs">
+                            <td class="px-7 py-5 text-slate-500 text-sm">
                                 {{ $order->created_at->diffForHumans() }}
                             </td>
-                            <td class="p-6 text-right">
+                            <td class="px-7 py-5 text-right">
+                                @php
+                                    $isReviewStage = $order->current_step == 7 || $order->status == 'Review';
+                                    $isCustomerPending = $order->status == 'Pending';
+                                    $buttonLabel = $isReviewStage ? 'Review Work' : ($isCustomerPending ? 'Review' : 'Manage');
+                                    $buttonHighlight = ($isCustomerPending && (!$order->is_payment_verified || !$order->is_content_verified)) || $isReviewStage;
+                                @endphp
                                 <a href="{{ url('admin/orders/' . $order->id) }}"
-                                    class="inline-block px-4 py-2 rounded-lg text-xs font-bold transition {{ ($order->status == 'Pending' && (!$order->is_payment_verified || !$order->is_content_verified)) ? 'bg-brand-red text-white hover:bg-red-600 shadow-[0_0_10px_rgba(255,45,70,0.4)]' : 'bg-white/10 hover:bg-white/20 text-white' }}">
-                                    {{ ($order->status == 'Pending') ? 'Review' : 'Manage' }}
+                                    class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200
+                                    {{ $buttonHighlight ? ($isReviewStage ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-brand-red hover:bg-brand-red-hover text-white') : 'bg-slate-700/50 hover:bg-slate-700 text-slate-200' }}">
+                                    {{ $buttonLabel }}
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="p-8 text-center text-gray-500">No orders found.</td>
+                            <td colspan="{{ $currentStatus == 'Pending' ? 7 : 6 }}" class="px-7 py-16 text-center text-slate-500">
+                                <i class="fas fa-inbox text-3xl mb-3 opacity-30 block"></i>
+                                <p class="text-sm">No orders found.</p>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
 
-            <!-- Pagination -->
-            <div class="p-4 border-t border-white/5">
+            <div class="px-7 py-5 border-t border-border-subtle">
                 {{ $orders->links() }}
             </div>
         </div>

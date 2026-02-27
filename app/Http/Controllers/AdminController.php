@@ -38,35 +38,43 @@ class AdminController extends Controller
         // 2. Metrics & BI Data
         $today = Carbon::today();
 
-        // Base Query
+        // Base Query: Staff see only their assigned orders; Admin sees all
         $baseQuery = Order::query();
         if ($isStaff) {
-            $baseQuery->where('staff_id', $user->id);
-            // Explicitly exclude Pending for staff in all base counts unless specifically querying valid statuses
-            $baseQuery->where('status', '!=', 'Pending');
+            $baseQuery->where('staff_id', $user->id); // "MY" = assigned to this staff only; Unassigned orders are not counted
         }
 
-        // Specific Counters (Filtered)
-        $pendingCount = (clone $baseQuery)->where('status', 'Pending')->count();
-        $inProgressCount = (clone $baseQuery)->whereIn('status', ['Processing', 'In Progress', 'Assigned', 'Review'])->count();
-        $completedCount = (clone $baseQuery)->whereIn('status', ['Paid', 'Completed'])->count();
-        $rejectedCount = (clone $baseQuery)->where('status', 'Rejected')->count();
+        // Single source of truth for tab counts (shared with Order Management)
+        $tabCounts = Order::getTabCountsForUser($user);
+        $pendingCount = $tabCounts['pending'];
+        $inProgressCount = $tabCounts['processing'];
+        $pendingApprovalCount = $tabCounts['pending_approval'];
+        $completedCount = $tabCounts['completed'];
+        $rejectedCount = $tabCounts['cancelled'];
 
-        // Financial Stats - HIDDEN for Staff
+        // Financial Stats - HIDDEN for Staff (Completed orders only; matches "Completed" tab)
         $totalRevenue = 0;
+        $todaySales = 0;
         $potentialSales = 0;
         $salesData = collect([]);
         $chartLabels = [];
         $chartValues = [];
 
         if (!$isStaff) {
-            $totalRevenue = Order::whereIn('status', ['Processing', 'In Progress', 'Paid', 'Assigned', 'Review'])->sum('total_amount');
-            $potentialSales = Order::sum('total_amount');
+            $revenueStats = Order::getRevenueStats();
+            $totalRevenue = $revenueStats['total_revenue'];
+            $todaySales = $revenueStats['today_sales'];
+            $potentialSales = Order::whereNotIn('status', ['Rejected', 'Cancelled'])->sum('total_amount');
 
-            // Charts Data (Revenue Trend)
-            $salesData = Order::select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total_amount) as total'))
-                ->whereIn('status', ['Processing', 'In Progress', 'Paid', 'Assigned', 'Review'])
-                ->whereDate('created_at', '>=', Carbon::now()->subDays(30))
+            // Charts Data (Revenue Trend) — completed orders only
+            $salesData = Order::select(DB::raw('DATE(COALESCE(completed_at, created_at)) as date'), DB::raw('SUM(total_amount) as total'))
+                ->whereIn('status', Order::STATUSES_COMPLETED)
+                ->where(function ($q) {
+                    $q->where('completed_at', '>=', Carbon::now()->subDays(30))
+                        ->orWhere(function ($q2) {
+                            $q2->whereNull('completed_at')->where('created_at', '>=', Carbon::now()->subDays(30));
+                        });
+                })
                 ->groupBy('date')
                 ->orderBy('date', 'ASC')
                 ->get();
@@ -75,9 +83,9 @@ class AdminController extends Controller
         }
 
         // Conversion Funnel Data
-        $totalOrders = (clone $baseQuery)->count();
+        $totalOrders = $tabCounts['all'];
         $approvedOrders = (clone $baseQuery)->whereIn('status', ['Processing', 'In Progress', 'Paid', 'Assigned', 'Review'])->count();
-        $completedOrdersCount = $completedCount;
+        $completedOrdersCount = $tabCounts['completed'];
 
         // Plan Data
         $planDataQuery = (clone $baseQuery)->select('plan', DB::raw('count(*) as total'))->groupBy('plan');
@@ -114,17 +122,27 @@ class AdminController extends Controller
 
         $defaultTab = $isStaff ? 'Processing' : 'Pending';
         $statusTab = $request->input('status', $defaultTab);
+        if ($statusTab === 'To Review') {
+            $statusTab = 'Pending Approval';
+        }
 
         if ($isStaff && $statusTab == 'Pending') {
             return redirect('admin?status=Processing');
         }
         if ($statusTab != 'All') {
-            if ($statusTab == 'Completed')
-                $query->where('status', 'Paid');
-            elseif ($statusTab == 'Cancelled')
+            if ($statusTab == 'Completed') {
+                $query->whereIn('status', Order::STATUSES_COMPLETED);
+            } elseif ($statusTab == 'Cancelled') {
                 $query->where('status', 'Rejected');
-            else
+            } elseif ($statusTab == 'Processing') {
+                $query->whereIn('status', Order::STATUSES_IN_PROGRESS);
+            } elseif ($statusTab == 'Pending Approval') {
+                $query->where('status', 'Review');
+            } elseif ($statusTab == 'Pending') {
+                $query->where('status', 'Pending');
+            } else {
                 $query->where('status', $statusTab);
+            }
         }
 
         if ($request->has('search') && $request->search != '') {
@@ -147,12 +165,16 @@ class AdminController extends Controller
         if ($request->filled('max_amount'))
             $query->where('total_amount', '<=', $request->max_amount);
 
-        // Get Results
-        $orders = $query->orderBy('created_at', 'desc')->get();
+        // Get Results — limit to 50 for performance; full list in Order Management
+        $orders = $query->orderBy('created_at', 'desc')->take(50)->get();
 
-        // Simple "Today's Orders" count for the card
-        $todayOrders = (clone $baseQuery)->whereDate('created_at', $today)->count();
-        $todaySales = $isStaff ? 0 : Order::whereDate('created_at', $today)->sum('total_amount');
+        // Today's Orders / My New Orders card
+        $todayOrders = $isStaff
+            ? (clone $baseQuery)->where('status', 'Pending')->count()
+            : (clone $baseQuery)->whereDate('created_at', $today)->count();
+        if ($isStaff) {
+            $todaySales = 0;
+        }
 
 
         if ($request->ajax()) {
@@ -178,13 +200,14 @@ class AdminController extends Controller
             'recentOrders',
             'recentLogs',
             'statusTab',
+            'tabCounts',
             'todayOrders',
             'todaySales',
             'isStaff'
         ));
     }
 
-    public function getLatestUpdates()
+    public function getLatestUpdates(Request $request)
     {
         if (!auth()->check())
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -197,26 +220,58 @@ class AdminController extends Controller
             $baseQuery->where('staff_id', $user->id);
         }
 
-        // 1. Fetch Latest 10 Orders (Pending or Processing)
-        $latestOrders = (clone $baseQuery)->whereIn('status', ['Pending', 'Processing'])
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
+        // Current tab from request (same param as Dashboard index) — single source of truth for list
+        $statusTab = $request->input('status', $isStaff ? 'Processing' : 'Pending');
+        if ($statusTab === 'To Review') {
+            $statusTab = 'Pending Approval';
+        }
 
-        // 2. Fetch Stats
+        // Build same filter as AdminController@index so poll returns exactly what the current tab shows
+        $listQuery = (clone $baseQuery);
+        if ($statusTab !== 'All') {
+            if ($statusTab === 'Completed') {
+                $listQuery->whereIn('status', Order::STATUSES_COMPLETED);
+            } elseif ($statusTab === 'Cancelled') {
+                $listQuery->where('status', 'Rejected');
+            } elseif ($statusTab === 'Processing') {
+                $listQuery->whereIn('status', Order::STATUSES_IN_PROGRESS);
+            } elseif ($statusTab === 'Pending Approval') {
+                $listQuery->where('status', 'Review');
+            } elseif ($statusTab === 'Pending') {
+                $listQuery->where('status', 'Pending');
+            } else {
+                $listQuery->where('status', $statusTab);
+            }
+        }
+        $latestOrders = $listQuery->orderBy('created_at', 'desc')->take(15)->get();
+
+        // Counts: exact same as Order::getTabCountsForUser (no caching)
+        $tabCounts = Order::getTabCountsForUser($user);
         $today = Carbon::today();
-        $todayOrders = (clone $baseQuery)->whereDate('created_at', $today)->count();
-        $pendingCount = (clone $baseQuery)->whereIn('status', ['Pending', 'Processing'])->count();
+        $todayOrders = $isStaff
+            ? (clone $baseQuery)->where('status', 'Pending')->count()
+            : (clone $baseQuery)->whereDate('created_at', $today)->count();
+        $pendingCount = $tabCounts['pending'];
 
-        // 3. Render Partial Rows
-        $html = view('admin.partials.dashboard_rows', ['orders' => $latestOrders])->render();
-
-        return response()->json([
+        $payload = [
             'latest_order_id' => $latestOrders->first() ? $latestOrders->first()->id : 0,
             'today_orders' => $todayOrders,
             'pending_count' => $pendingCount,
-            'html' => $html
-        ]);
+            'tab_counts' => $tabCounts,
+            'html' => view('admin.partials.dashboard_rows', ['orders' => $latestOrders])->render(),
+            'status_tab' => $statusTab,
+        ];
+
+        if (!$isStaff) {
+            $revenue = Order::getRevenueStats();
+            $payload['total_revenue'] = $revenue['total_revenue'];
+            $payload['today_sales'] = $revenue['today_sales'];
+        }
+
+        return response()->json($payload)
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function orders(Request $request)
@@ -337,8 +392,17 @@ class AdminController extends Controller
                     $this->logAction($id, 'Status Change', 'Marked as Processing');
                     break;
                 case 'completed':
-                    $order->update(['status' => 'Paid']);
-                    $this->logAction($id, 'Status Change', 'Marked as Paid (Completed)');
+                    // Strict review workflow: only finalize orders already at Step 7/Review with submitted report.
+                    if (($order->status === 'Review' || (int) $order->current_step === 7) && !empty($order->report_file)) {
+                        $order->update([
+                            'status' => 'Completed',
+                            'current_step' => 8,
+                            'completed_at' => now(),
+                        ]);
+                        $this->logAction($id, 'Status Change', 'Batch finalized from Pending Approval to Completed.');
+                    } else {
+                        $this->logAction($id, 'Status Change Blocked', 'Batch complete blocked: order not in Pending Approval or report missing.');
+                    }
                     break;
                 case 'cancelled':
                     $order->update(['status' => 'Rejected']);
@@ -366,9 +430,14 @@ class AdminController extends Controller
 
     public function markCompleted($id)
     {
+        if (auth()->user()->role !== 'admin') {
+            return redirect()->back()->with('error', 'Only admins can mark orders as Completed.');
+        }
+
         Order::where('id', $id)->update([
             'status' => 'Completed',
-            'current_step' => 8 // Ensure stepper syncs
+            'current_step' => 8, // Ensure stepper syncs
+            'completed_at' => now(),
         ]);
         $this->logAction($id, 'Status Change', 'Marked as Completed (Step 8)');
         $this->syncCustomers(); // Update stats

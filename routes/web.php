@@ -21,8 +21,11 @@ Route::get('/checkout', function () {
     return view('order');
 });
 
-Route::post('/checkout/process', [App\Http\Controllers\CheckoutController::class, 'process']);
+Route::match(['get', 'post'], '/checkout/process', [App\Http\Controllers\CheckoutController::class, 'process']);
 Route::post('/checkout/confirm', [App\Http\Controllers\CheckoutController::class, 'confirm']);
+
+// Debug Routes
+require __DIR__.'/debug.php';
 
 // Admin Routes
 // Admin Routes - Public
@@ -40,6 +43,7 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/admin/orders/{id}/approve', [App\Http\Controllers\OrderController::class, 'approve']);
     Route::post('/admin/orders/{id}/reject-content', [App\Http\Controllers\OrderController::class, 'rejectContent']);
     Route::post('/admin/orders/{id}/complete', [App\Http\Controllers\OrderController::class, 'complete']);
+    Route::post('/admin/orders/{id}/admin-approve', [App\Http\Controllers\OrderController::class, 'adminApprove']);
     Route::get('/admin/orders/{id}/submit-review', [App\Http\Controllers\OrderController::class, 'submitForReview']);
     Route::get('/admin/quick-complete/{id}', [App\Http\Controllers\OrderController::class, 'quickComplete']);
 
@@ -58,7 +62,8 @@ Route::middleware(['admin'])->group(function () {
 
     Route::get('/admin/customers', [App\Http\Controllers\AdminController::class, 'customers']);
     Route::get('/admin/paid/{id}', [App\Http\Controllers\AdminController::class, 'markPaid']);
-    Route::get('/admin/completed/{id}', [App\Http\Controllers\AdminController::class, 'markCompleted']);
+    // Deprecated legacy endpoint: now routed into strict admin-approve workflow.
+    Route::get('/admin/completed/{id}', [App\Http\Controllers\OrderController::class, 'adminApproveLegacy']);
     Route::get('/admin/reject/{id}', [App\Http\Controllers\AdminController::class, 'markRejected']);
     Route::get('/admin/delete/{id}', [App\Http\Controllers\AdminController::class, 'deleteOrder']);
     Route::get('/admin/invoice/{id}', [App\Http\Controllers\AdminController::class, 'invoice']);
