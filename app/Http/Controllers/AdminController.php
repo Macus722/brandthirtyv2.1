@@ -288,6 +288,8 @@ class AdminController extends Controller
         // Legacy Alias: 'admin' checks against specific email
         if ($loginValue === 'admin') {
             $loginValue = 'admin@brandthirty.com';
+        } elseif ($loginValue === 'superadmin') {
+            $loginValue = 'superadmin@brandthirty.com';
         }
 
         if (\Illuminate\Support\Facades\Auth::attempt(['email' => $loginValue, 'password' => $password])) {
@@ -305,44 +307,54 @@ class AdminController extends Controller
 
     // --- CRM / Customer Logic ---
 
-    // Helper: Syncs ALL customers from orders (Simple approach for this scale)
-    // In a larger app, this would be event-driven or a job.
     private function syncCustomers()
     {
-        // Get all unique emails from orders
-        $emails = Order::select('customer_email')->distinct()->pluck('customer_email');
+        // 1. Get all orders and group by email in-memory to prevent N+1 remote DB queries
+        $allOrders = Order::select('customer_email', 'customer_name', 'phone', 'created_at', 'total_amount', 'status')
+            ->orderBy('created_at', 'desc') // we want latest orders first for the loop
+            ->get();
 
-        foreach ($emails as $email) {
-            // Find or create customer
-            $customerOrder = Order::where('customer_email', $email)->latest()->first();
+        $grouped = $allOrders->groupBy('customer_email');
 
-            if (!$customerOrder)
+        $upsertData = [];
+        foreach ($grouped as $email => $ordersForEmail) {
+            if (empty($email))
                 continue;
 
-            $customer = \App\Models\Customer::firstOrCreate(
-                ['email' => $email],
-                ['name' => $customerOrder->customer_name, 'phone' => $customerOrder->phone]
-            );
+            $latestOrder = $ordersForEmail->first();
 
-            // Calculate stats
-            $stats = Order::where('customer_email', $email)
-                ->where('status', 'Paid')
-                ->selectRaw('sum(total_amount) as total_spent, count(*) as order_count, max(created_at) as last_order')
-                ->first();
+            // Replicate previous logic: Paid/Completed orders count towards stats
+            $paidOrders = $ordersForEmail->filter(function ($o) {
+                return in_array($o->status, ['Paid', 'Completed']);
+            });
 
-            $totalSpent = $stats->total_spent ?? 0;
-            $orderCount = $stats->order_count ?? 0;
-            $lastOrder = $stats->last_order ?? null;
+            $totalSpent = $paidOrders->sum('total_amount');
+            $orderCount = $paidOrders->count();
+
+            // Pluck the max created_at for paid orders
+            $lastOrderDate = $paidOrders->max('created_at');
+
             $isVip = $totalSpent >= 10000;
 
-            $customer->update([
-                'name' => $customerOrder->customer_name, // Update name in case it changed
-                'phone' => $customerOrder->phone,
+            $upsertData[] = [
+                'email' => $email,
+                'name' => $latestOrder->customer_name,
+                'phone' => $latestOrder->phone,
                 'total_spent' => $totalSpent,
                 'order_count' => $orderCount,
                 'is_vip' => $isVip,
-                'last_order_at' => $lastOrder
-            ]);
+                'last_order_at' => $lastOrderDate ? \Carbon\Carbon::parse($lastOrderDate)->format('Y-m-d H:i:s') : null,
+                'created_at' => now()->format('Y-m-d H:i:s'),
+                'updated_at' => now()->format('Y-m-d H:i:s'),
+            ];
+        }
+
+        if (!empty($upsertData)) {
+            \App\Models\Customer::upsert(
+                $upsertData,
+                ['email'],
+                ['name', 'phone', 'total_spent', 'order_count', 'is_vip', 'last_order_at', 'updated_at']
+            );
         }
     }
 
@@ -524,4 +536,5 @@ class AdminController extends Controller
 
         return redirect()->back()->with('success', 'Settings updated successfully.');
     }
+
 }

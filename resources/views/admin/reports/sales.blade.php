@@ -221,12 +221,12 @@
                                 @endif
                             </td>
                             <td class="px-7 py-5">
-                                @if($order->staff_id && $order->staff)
+                                @if($order->staff_id && $order->staff_name)
                                     <div class="flex items-center gap-2">
                                         <div class="w-6 h-6 rounded-full bg-purple-500/15 flex items-center justify-center text-xs text-purple-400 font-semibold flex-shrink-0">
-                                            {{ substr($order->staff->name, 0, 1) }}
+                                            {{ substr($order->staff_name, 0, 1) }}
                                         </div>
-                                        <span class="text-slate-300">{{ $order->staff->name }}</span>
+                                        <span class="text-slate-300">{{ $order->staff_name }}</span>
                                     </div>
                                 @else
                                     <span class="text-slate-600 italic">Unassigned</span>

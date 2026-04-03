@@ -10,8 +10,10 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     @stack('scripts_head')
     <script>
         tailwind.config = {
@@ -76,7 +78,8 @@
     @php $authUser = auth()->user(); @endphp
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-surface-card backdrop-blur-xl border-r border-border-subtle flex flex-col justify-between hidden md:flex flex-shrink-0">
+    <aside
+        class="w-64 bg-surface-card backdrop-blur-xl border-r border-border-subtle flex flex-col justify-between hidden md:flex flex-shrink-0">
         <div class="flex flex-col h-full">
             <!-- Logo -->
             <div class="h-20 flex items-center px-8 border-b border-border-subtle flex-shrink-0">
@@ -99,26 +102,42 @@
                     <span>Order Management</span>
                 </a>
 
+                <a href="{{ url('admin/clients') }}"
+                    class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                    {{ request()->is('admin/clients*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                    <i class="fas fa-briefcase w-5 text-center"></i>
+                    <span>Client Management</span>
+                </a>
+
                 @if($authUser && $authUser->role == 'admin')
                     <a href="{{ url('admin/services') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {{ request()->is('admin/services*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                                {{ request()->is('admin/services*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         <i class="fas fa-sliders-h w-5 text-center"></i>
                         <span>Service Manager</span>
                     </a>
+                @endif
 
+                @if($authUser && $authUser->is_super_admin)
                     <a href="{{ url('admin/staff') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {{ request()->is('admin/staff*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                                {{ request()->is('admin/staff*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         <i class="fas fa-users-cog w-5 text-center"></i>
                         <span>Staff Management</span>
                     </a>
 
                     <a href="{{ url('admin/reports/sales') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                        {{ request()->is('admin/reports/sales*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                                {{ request()->is('admin/reports/sales*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
                         <i class="fas fa-chart-bar w-5 text-center"></i>
                         <span>Sales Report</span>
+                    </a>
+
+                    <a href="{{ url('admin/network') }}"
+                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                                {{ request()->is('admin/network*') ? 'bg-brand-red text-white shadow-lg shadow-red-900/30' : 'text-slate-400 hover:text-white hover:bg-white/5' }}">
+                        <i class="fas fa-network-wired w-5 text-center"></i>
+                        <span>Network Management</span>
                     </a>
                 @endif
 
@@ -134,7 +153,8 @@
             <!-- User Info -->
             <div class="p-5 border-t border-border-subtle flex-shrink-0">
                 <div class="flex items-center gap-3 px-3">
-                    <div class="w-9 h-9 rounded-full bg-brand-red flex items-center justify-center text-sm font-bold text-white">
+                    <div
+                        class="w-9 h-9 rounded-full bg-brand-red flex items-center justify-center text-sm font-bold text-white">
                         {{ strtoupper(substr($authUser->name ?? 'A', 0, 1)) }}
                     </div>
                     <div>
@@ -150,9 +170,11 @@
     <div class="flex-1 flex flex-col h-full overflow-hidden">
 
         <!-- Mobile Header -->
-        <header class="h-16 bg-surface-card backdrop-blur-xl border-b border-border-subtle flex md:hidden items-center justify-between px-5 flex-shrink-0">
+        <header
+            class="h-16 bg-surface-card backdrop-blur-xl border-b border-border-subtle flex md:hidden items-center justify-between px-5 flex-shrink-0">
             <img class="h-6 w-auto" src="{{ asset('Images/B30_logo-04.png') }}" alt="BrandThirty">
-            <button onclick="confirmLogout()" class="text-slate-400 hover:text-white transition"><i class="fas fa-sign-out-alt"></i></button>
+            <button onclick="confirmLogout()" class="text-slate-400 hover:text-white transition"><i
+                    class="fas fa-sign-out-alt"></i></button>
         </header>
 
         <!-- Main Content Scrollable Area -->

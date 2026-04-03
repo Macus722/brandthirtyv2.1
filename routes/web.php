@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NetworkController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,7 @@ Route::match(['get', 'post'], '/checkout/process', [App\Http\Controllers\Checkou
 Route::post('/checkout/confirm', [App\Http\Controllers\CheckoutController::class, 'confirm']);
 
 // Debug Routes
-require __DIR__.'/debug.php';
+require __DIR__ . '/debug.php';
 
 // Admin Routes
 // Admin Routes - Public
@@ -50,15 +51,26 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/orders/{id}/assign', [App\Http\Controllers\OrderController::class, 'assignStaff']);
     Route::get('/admin/orders/{id}/start-work', [App\Http\Controllers\OrderController::class, 'startWork']);
 
-    // Staff Management
-    Route::get('/admin/staff', [App\Http\Controllers\StaffController::class, 'index']);
-    Route::post('/admin/staff', [App\Http\Controllers\StaffController::class, 'store']);
-    Route::get('/admin/staff/delete/{id}', [App\Http\Controllers\StaffController::class, 'destroy']);
+    // Super Admin Only
+    Route::middleware(['superadmin'])->group(function () {
+        // Staff Management
+        Route::get('/admin/staff', [App\Http\Controllers\StaffController::class, 'index']);
+        Route::post('/admin/staff', [App\Http\Controllers\StaffController::class, 'store']);
+        Route::get('/admin/staff/delete/{id}', [App\Http\Controllers\StaffController::class, 'destroy']);
 
-    // Reports
-    Route::get('/admin/reports/sales', [App\Http\Controllers\SalesReportController::class, 'index']);
-    Route::get('/admin/reports/sales/export', [App\Http\Controllers\SalesReportController::class, 'export']);
-    Route::get('/admin/reports/sales/download-pdf', [App\Http\Controllers\SalesReportController::class, 'downloadPdf']);
+        // Reports
+        Route::get('/admin/reports/sales', [App\Http\Controllers\SalesReportController::class, 'index']);
+        Route::get('/admin/reports/sales/export', [App\Http\Controllers\SalesReportController::class, 'export']);
+        Route::get('/admin/reports/sales/download-pdf', [App\Http\Controllers\SalesReportController::class, 'downloadPdf']);
+
+        // Network Management (Super Admin Command Center)
+        Route::get('/admin/network', [NetworkController::class, 'index'])->name('admin.network');
+        Route::get('/admin/network/pulse', [NetworkController::class, 'pulse'])->name('admin.network.pulse');
+        Route::post('/admin/network/toggle', [NetworkController::class, 'toggleModule'])->name('admin.network.toggle');
+        Route::get('/admin/network/god-mode', [NetworkController::class, 'godModeLink'])->name('admin.network.godmode');
+        Route::get('/admin/network/financial-intelligence', [NetworkController::class, 'financialIntelligence'])->name('admin.network.financial');
+        Route::post('/admin/network/sync-all', [NetworkController::class, 'syncAll'])->name('admin.network.syncall');
+    });
 
     Route::get('/admin/customers', [App\Http\Controllers\AdminController::class, 'customers']);
     Route::get('/admin/paid/{id}', [App\Http\Controllers\AdminController::class, 'markPaid']);
@@ -77,4 +89,21 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/update/{id}', [App\Http\Controllers\AdminController::class, 'update']);
     Route::post('/admin/batch', [App\Http\Controllers\AdminController::class, 'batchUpdate']);
     Route::get('/admin/api/updates', [App\Http\Controllers\AdminController::class, 'getLatestUpdates']);
+
+    // Client Management
+    Route::get('/admin/clients', [App\Http\Controllers\ClientController::class, 'index']);
+    Route::get('/admin/clients/online', [App\Http\Controllers\ClientController::class, 'onlineSales']);
+    Route::get('/admin/clients/offline', [App\Http\Controllers\ClientController::class, 'offlineIndex']);
+    Route::get('/admin/clients/offline/create', [App\Http\Controllers\ClientController::class, 'offlineCreate']);
+    Route::post('/admin/clients/offline', [App\Http\Controllers\ClientController::class, 'offlineStore']);
+    Route::get('/admin/clients/offline/{id}/edit', [App\Http\Controllers\ClientController::class, 'offlineEdit']);
+    Route::post('/admin/clients/offline/{id}', [App\Http\Controllers\ClientController::class, 'offlineUpdate']);
+    Route::get('/admin/clients/offline/{id}/delete', [App\Http\Controllers\ClientController::class, 'offlineDelete']);
+    Route::post('/admin/clients/offline/{id}/pay', [App\Http\Controllers\ClientController::class, 'markPaid']);
+    Route::get('/admin/clients/offline/reports', [App\Http\Controllers\ClientController::class, 'offlineReports']);
+    Route::get('/admin/clients/offline/invoice/{paymentId}', [
+        App\Http\Controllers\ClientController::class,
+        'generateInvoice'
+    ]);
+    Route::get('/admin/clients/offline/export', [App\Http\Controllers\ClientController::class, 'exportPayments']);
 });

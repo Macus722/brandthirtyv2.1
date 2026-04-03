@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\Order;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -10,10 +9,12 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class OrdersExport implements FromCollection, WithHeadings, WithMapping
 {
     protected $filters;
+    protected $orders;
 
-    public function __construct(array $filters = [])
+    public function __construct(array $filters = [], $orders = null)
     {
         $this->filters = $filters;
+        $this->orders = $orders;
     }
 
     /**
@@ -21,25 +22,13 @@ class OrdersExport implements FromCollection, WithHeadings, WithMapping
      */
     public function collection()
     {
-        $query = Order::query();
-
-        if (isset($this->filters['date_start']) && $this->filters['date_start']) {
-            $query->whereDate('created_at', '>=', $this->filters['date_start']);
-        }
-        if (isset($this->filters['date_end']) && $this->filters['date_end']) {
-            $query->whereDate('created_at', '<=', $this->filters['date_end']);
-        }
-        if (isset($this->filters['plan']) && $this->filters['plan'] != 'All') {
-            $query->where('plan', $this->filters['plan']);
-        }
-
-        return $query->get();
+        return collect($this->orders);
     }
 
     public function headings(): array
     {
         return [
-            'Order ID',
+            'Order / Invoice ID',
             'Date',
             'Customer Name',
             'Email',

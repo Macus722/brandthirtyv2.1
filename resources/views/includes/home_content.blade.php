@@ -769,7 +769,7 @@
             <div class="bg-brand-black rounded-2xl border border-gray-800 p-6 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-gray-800/20 rounded-bl-full -mr-4 -mt-4"></div>
                 <h3 class="text-white font-bold text-2xl mb-2">Access</h3>
-                <div class="text-brand-red text-3xl font-extrabold mb-6">980</div>
+
                 <ul class="space-y-3 mb-8 text-gray-300 text-sm">
                     <li class="flex justify-between border-b border-gray-800 pb-2">
                         <span>Guaranteed Outlets</span>
@@ -789,8 +789,7 @@
                     </li>
                 </ul>
                 <a href="{{ url('checkout') }}?plan=access"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Get Quote Now</a>
             </div>
 
             <!-- Growth Package (Popular) -->
@@ -799,7 +798,7 @@
                 <div class="absolute top-0 right-0 bg-brand-red text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                     POPULAR</div>
                 <h3 class="text-white font-bold text-2xl mb-2">Growth</h3>
-                <div class="text-brand-red text-3xl font-extrabold mb-6">2380</div>
+
                 <ul class="space-y-3 mb-8 text-gray-300 text-sm">
                     <li class="flex justify-between border-b border-gray-800 pb-2">
                         <span>Guaranteed Outlets</span>
@@ -818,15 +817,14 @@
                         <span class="font-bold text-white">3 Days</span>
                     </li>
                     <a href="{{ url('checkout') }}?plan=growth"
-                        class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-white shadow-lg shadow-red-900/40">Order
-                        Now</a>
+                        class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-white shadow-lg shadow-red-900/40">Get Quote Now</a>
             </div>
 
             <!-- Authority Package -->
             <div class="bg-brand-black rounded-2xl border border-gray-800 p-6 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-gray-800/20 rounded-bl-full -mr-4 -mt-4"></div>
                 <h3 class="text-white font-bold text-2xl mb-2">Authority</h3>
-                <div class="text-brand-red text-3xl font-extrabold mb-6">3980</div>
+
                 <ul class="space-y-3 mb-8 text-gray-300 text-sm">
                     <li class="flex justify-between border-b border-gray-800 pb-2">
                         <span>Guaranteed Outlets</span>
@@ -846,15 +844,14 @@
                     </li>
                 </ul>
                 <a href="{{ url('checkout') }}?plan=authority"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Get Quote Now</a>
             </div>
 
             <!-- Ultimate Package -->
             <div class="bg-brand-black rounded-2xl border border-gray-800 p-6 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-gray-800/20 rounded-bl-full -mr-4 -mt-4"></div>
                 <h3 class="text-white font-bold text-2xl mb-2">Ultimate</h3>
-                <div class="text-brand-red text-3xl font-extrabold mb-6">4980</div>
+
                 <ul class="space-y-3 mb-8 text-gray-300 text-sm">
                     <li class="flex justify-between border-b border-gray-800 pb-2">
                         <span>Guaranteed Outlets</span>
@@ -874,8 +871,7 @@
                     </li>
                 </ul>
                 <a href="{{ url('checkout') }}?plan=ultimate"
-                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Order
-                    Now</a>
+                    class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-white">Get Quote Now</a>
             </div>
         </div>
 
@@ -886,17 +882,14 @@
                 <thead>
                     <tr class="bg-gray-900/50">
                         <th class="text-gray-400 font-medium text-lg uppercase tracking-wider w-1/5">Package</th>
-                        <th class="text-white font-bold text-2xl text-center w-1/5">Access<br><span
-                                class="text-brand-red text-lg">980</span></th>
+                        <th class="text-white font-bold text-2xl text-center w-1/5">Access</th>
                         <th class="text-white font-bold text-2xl text-center w-1/5 relative">
-                            Growth<br><span class="text-brand-red text-lg">2380</span>
+                            Growth
                             <span
                                 class="absolute -top-3 right-4 bg-brand-red text-white text-[10px] px-2 py-0.5 rounded-full">POPULAR</span>
                         </th>
-                        <th class="text-white font-bold text-2xl text-center w-1/5">Authority<br><span
-                                class="text-brand-red text-lg">3980</span></th>
-                        <th class="text-white font-bold text-2xl text-center w-1/5">Ultimate<br><span
-                                class="text-brand-red text-lg">4980</span></th>
+                        <th class="text-white font-bold text-2xl text-center w-1/5">Authority</th>
+                        <th class="text-white font-bold text-2xl text-center w-1/5">Ultimate</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-300">
@@ -931,17 +924,13 @@
                     <tr>
                         <td></td>
                         <td class="p-4"><a href="{{ url('checkout') }}?plan=access"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
+                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Get Quote Now</a></td>
                         <td class="p-4"><a href="{{ url('checkout') }}?plan=growth"
-                                class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-sm shadow-lg shadow-red-900/40">Order
-                                Now</a></td>
+                                class="block w-full py-3 bg-brand-red hover:bg-brand-red-hover text-center rounded-lg font-bold transition text-sm shadow-lg shadow-red-900/40">Get Quote Now</a></td>
                         <td class="p-4"><a href="{{ url('checkout') }}?plan=authority"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
+                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Get Quote Now</a></td>
                         <td class="p-4"><a href="{{ url('checkout') }}?plan=ultimate"
-                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Order
-                                Now</a></td>
+                                class="block w-full py-3 bg-gray-800 hover:bg-gray-700 text-center rounded-lg font-bold transition text-sm">Get Quote Now</a></td>
                     </tr>
                 </tbody>
             </table>

@@ -173,14 +173,6 @@ class CheckoutController extends Controller
 
                 Session::put('last_order_hash', $currentHash);
 
-                // 4. Send Emails (Using standard PHP mail for now to match user logic, but Laravel Mailables preferred)
-                // Sending raw emails as requested in original logic:
-
-                $headers = "MIME-Version: 1.0" . "\r\n";
-                $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-                $headers .= 'From: BrandThirty Orders <no-reply@brandthirty.com>' . "\r\n";
-
-                // Admin Email
                 $adminSubject = "New Order Alert - {$data['name']} - " . ucfirst($data['plan']);
                 $adminMessage = "
                 <h3>New Order Received ({$data['order_id']})</h3>
@@ -193,9 +185,7 @@ class CheckoutController extends Controller
                 <p><strong>Plan:</strong> " . ucfirst($data['plan']) . "</p>
                 <p><strong>Distribution:</strong> {$data['distribution']} Articles</p>
                 ";
-                @mail($this->adminEmail, $adminSubject, $adminMessage, $headers);
 
-                // Customer Email
                 $customerSubject = "Order Confirmation - BrandThirty";
                 $customerMessage = "
                 <h3>Thank you for your order!</h3>
@@ -203,7 +193,22 @@ class CheckoutController extends Controller
                 <p>Total Pending: <strong>RM {$data['total_amount']}</strong></p>
                 <p>Please complete your payment via DuitNow or Bank Transfer to proceed.</p>
                 ";
-                @mail($data['email'], $customerSubject, $customerMessage, $headers);
+
+                try {
+                    Mail::html($adminMessage, function ($message) use ($data, $adminSubject) {
+                        $message->to($this->adminEmail)
+                            ->subject($adminSubject)
+                            ->from('no-reply@brandthirty.com', 'BrandThirty Orders');
+                    });
+
+                    Mail::html($customerMessage, function ($message) use ($data, $customerSubject) {
+                        $message->to($data['email'])
+                            ->subject($customerSubject)
+                            ->from('no-reply@brandthirty.com', 'BrandThirty Orders');
+                    });
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send order emails: ' . $e->getMessage());
+                }
 
             } catch (\Exception $e) {
                 // Log error or handle DB failure locally

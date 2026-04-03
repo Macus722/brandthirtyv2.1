@@ -79,6 +79,36 @@ return [
             'options' => [],
         ],
 
+        'prism' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_PRISM_HOST', '127.0.0.1'),
+            'port' => env('DB_PRISM_PORT', '5432'),
+            'database' => env('DB_PRISM_DATABASE', 'forge'),
+            'username' => env('DB_PRISM_USERNAME', 'forge'),
+            'password' => env('DB_PRISM_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_PRISM_SSLMODE', 'require'),
+            'options' => [],
+        ],
+
+        'alphafin' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_ALPHAFIN_HOST', '127.0.0.1'),
+            'port' => env('DB_ALPHAFIN_PORT', '5432'),
+            'database' => env('DB_ALPHAFIN_DATABASE', 'forge'),
+            'username' => env('DB_ALPHAFIN_USERNAME', 'forge'),
+            'password' => env('DB_ALPHAFIN_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('DB_ALPHAFIN_SSLMODE', 'require'),
+            'options' => [],
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
